@@ -34,7 +34,7 @@ module.exports = {
         let indexHTML = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
         fs.writeFileSync(path.join(distDir, 'appshell.html'), indexHTML);
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHTML.replace(/<html>/i, `<html manifest=${rootURL()}manifest.appcache>`));
-        context.distFiles.push('appshell.html');
+        context.distFiles.push('manifest.appcache', 'appshell.html');
       },
       renderManifest: function(paths) {
         let excludePattern = this.readConfig('excludePattern');
