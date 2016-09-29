@@ -26,6 +26,11 @@ module.exports = {
     let modulePrefix = () => this.modulePrefix;
     let DeployPlugin = DeployPluginBase.extend({
       name: options.name,
+      defaultConfig: {
+        excludePattern: '{robots.txt,crossdomain.xml}',
+        externalDependencies: [],
+        prefixDomains: {},
+      },
       didBuild: function(context) {
         let distDir = context.distDir;
         let files = context.distFiles;
