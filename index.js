@@ -30,16 +30,37 @@ module.exports = {
         excludePattern: '{robots.txt,crossdomain.xml}',
         externalDependencies: [],
         prefixDomains: {},
+        prepareManifest: true,
+        distDir: function(context) {
+          return context.distDir;
+        },
+        distFiles: function(context) {
+          return context.distFiles;
+        },
       },
       didBuild: function(context) {
-        let distDir = context.distDir;
-        let files = context.distFiles;
+        this.prepareBootLoader(context);
+        if (this.readConfig('prepareManifest')) {
+          this.prepareManifest(context);
+        }
+      },
+      prepareBootLoader: function(context) {
+        let distDir = this.readConfig('distDir');
         fs.writeFileSync(path.join(distDir, 'bootloader.js'), this.renderBootloader(modulePrefix()));
+        if (context.distFiles) {
+          context.distFiles.push('bootloader.js');
+        }
+      },
+      prepareManifest: function(context) {
+        let distDir = this.readConfig('distDir');
+        let files = this.readConfig('distFiles');
         fs.writeFileSync(path.join(distDir, 'manifest.appcache'), this.renderManifest(files));
         let indexHTML = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
         fs.writeFileSync(path.join(distDir, 'appshell.html'), indexHTML);
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHTML.replace(/<html>/i, `<html manifest=${rootURL()}manifest.appcache>`));
-        context.distFiles.push('bootloader.js', 'manifest.appcache', 'appshell.html');
+        if (context.distFiles) {
+          context.distFiles.push('manifest.appcache', 'appshell.html');
+        }
       },
       renderManifest: function(paths) {
         let excludePattern = this.readConfig('excludePattern');
