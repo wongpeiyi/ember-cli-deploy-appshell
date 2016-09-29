@@ -18,13 +18,13 @@ module.exports = {
       let loader = fs.readFileSync(require.resolve('loader.js'), 'utf8');
       let src = fs.readFileSync(path.join(__dirname, 'lib', 'bootloader.js'), 'utf8').replace(/MODULE_PREFIX/g, config.modulePrefix);
       let bootloader = uglify.minify(loader + src, { fromString: true, mangle:true, compress: true}).code;
-      this.baseURL = config.baseURL;
+      this.rootURL = config.rootURL;
       return `<script type="text/javascript">${ bootloader }</script>`;
     }
   },
 
   createDeployPlugin: function(options) {
-    let baseURL = () => this.baseURL;
+    let rootURL = () => this.rootURL;
     let DeployPlugin = DeployPluginBase.extend({
       name: options.name,
       didBuild: function(context) {
@@ -33,8 +33,8 @@ module.exports = {
         fs.writeFileSync(path.join(distDir, 'manifest.appcache'), this.renderManifest(files));
         let indexHTML = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
         fs.writeFileSync(path.join(distDir, 'appshell.html'), indexHTML);
+        fs.writeFileSync(path.join(distDir, 'index.html'), indexHTML.replace(/<html>/i, `<html manifest=${rootURL()}manifest.appcache>`));
         context.distFiles.push('appshell.html');
-        fs.writeFileSync(path.join(distDir, 'index.html'), indexHTML.replace(/<html>/i, `<html manifest=${baseURL()}manifest.appcache>`));
       },
       renderManifest: function(paths) {
         let excludePattern = this.readConfig('excludePattern');
