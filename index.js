@@ -15,26 +15,26 @@ module.exports = {
 
   contentFor(type, config) {
     if (type === 'head') {
-      let loader = fs.readFileSync(require.resolve('loader.js'), 'utf8');
-      let src = fs.readFileSync(path.join(__dirname, 'lib', 'bootloader.js'), 'utf8').replace(/MODULE_PREFIX/g, config.modulePrefix);
-      let bootloader = uglify.minify(loader + src, { fromString: true, mangle:true, compress: true}).code;
       this.rootURL = config.rootURL;
-      return `<script type="text/javascript">${ bootloader }</script>`;
+      this.modulePrefix = config.modulePrefix;
+      return `<script src="${this.rootURL}bootloader.js"></script>`;
     }
   },
 
   createDeployPlugin: function(options) {
     let rootURL = () => this.rootURL;
+    let modulePrefix = () => this.modulePrefix;
     let DeployPlugin = DeployPluginBase.extend({
       name: options.name,
       didBuild: function(context) {
         let distDir = context.distDir;
         let files = context.distFiles;
+        fs.writeFileSync(path.join(distDir, 'bootloader.js'), this.renderBootloader(modulePrefix()));
         fs.writeFileSync(path.join(distDir, 'manifest.appcache'), this.renderManifest(files));
         let indexHTML = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
         fs.writeFileSync(path.join(distDir, 'appshell.html'), indexHTML);
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHTML.replace(/<html>/i, `<html manifest=${rootURL()}manifest.appcache>`));
-        context.distFiles.push('manifest.appcache', 'appshell.html');
+        context.distFiles.push('bootloader.js', 'manifest.appcache', 'appshell.html');
       },
       renderManifest: function(paths) {
         let excludePattern = this.readConfig('excludePattern');
@@ -57,6 +57,11 @@ module.exports = {
 ${ outputPaths.join("\n") }
 NETWORK:
 *`;
+      },
+      renderBootloader: function(modulePrefix) {
+        let loader = fs.readFileSync(require.resolve('loader.js'), 'utf8');
+        let src = fs.readFileSync(path.join(__dirname, 'lib', 'bootloader.js'), 'utf8').replace(/MODULE_PREFIX/g, modulePrefix);
+        return uglify.minify(loader + src, { fromString: true, mangle: true, compress: true }).code;
       }
     });
     return new DeployPlugin();
