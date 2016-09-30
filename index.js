@@ -18,12 +18,15 @@ module.exports = {
     if (type === 'head') {
       this.rootURL = config.rootURL;
       this.modulePrefix = config.modulePrefix;
-      return `<script src="${config.rootURL}bootloader.js"></script>`;
+      this.assetsURL = this.app.options.fingerprint.prepend + '/' + config.rootURL + '/';
+      this.assetsURL = this.assetsURL.replace(/([^:]\/|^\/)\/+/g, '$1');
+      return `<script src="${this.assetsURL}bootloader.js"></script>`;
     }
   },
 
   createDeployPlugin(options) {
     let rootURL = () => this.rootURL;
+    let assetsURL = () => this.assetsURL;
     let modulePrefix = () => this.modulePrefix;
 
     let DeployPlugin = DeployPluginBase.extend({
@@ -95,7 +98,9 @@ module.exports = {
 
       writeBootloader(modulePrefix) {
         let loader = fs.readFileSync(require.resolve('loader.js'), 'utf8');
-        let src = fs.readFileSync(path.join(__dirname, 'lib', 'bootloader.js'), 'utf8').replace(/MODULE_PREFIX/g, modulePrefix);
+        let src = fs.readFileSync(path.join(__dirname, 'lib', 'bootloader.js'), 'utf8')
+          .replace(/MODULE_PREFIX/g, modulePrefix)
+          .replace(/APPSHELL_PATH/g, assetsURL());
         return uglify.minify(loader + src, { fromString: true, mangle: true, compress: true }).code;
       }
     });
